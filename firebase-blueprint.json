@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and permissions",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "whatsapp": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "manager"] },
+        "status": { "type": "string", "enum": ["active", "suspended"] },
+        "examLimit": { "type": "integer" },
+        "examsGenerated": { "type": "integer" },
+        "createdBy": { "type": "string" },
+        "userLimit": { "type": "integer" }
+      },
+      "required": ["username", "email", "status", "examLimit", "examsGenerated"]
+    },
+    "HistoricExam": {
+      "title": "HistoricExam",
+      "description": "A generated exam saved in history",
+      "type": "object",
+      "properties": {
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "options": { "type": "object" },
+        "exam": { "type": "array", "items": { "type": "object" } },
+        "userId": { "type": "string" }
+      },
+      "required": ["generatedAt", "options", "exam", "userId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/history/{examId}": {
+      "schema": "HistoricExam",
+      "description": "Saved exams"
+    }
+  }
+}

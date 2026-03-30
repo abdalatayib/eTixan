@@ -1,0 +1,15 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    body {
+        @apply bg-slate-950;
+        background-image: radial-gradient(ellipse at center, transparent 30%, theme('colors.slate.950'));
+    }
+}

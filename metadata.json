@@ -1,0 +1,5 @@
+{
+  "name": "eTixaan",
+  "description": "An intelligent application that leverages the Gemini API to generate comprehensive exams on any subject. Users can specify the topic, number of questions, question types, and difficulty level to create tailored educational assessments instantly.",
+  "requestFramePermissions": []
+}

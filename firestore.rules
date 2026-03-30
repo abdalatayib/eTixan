@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'admin') || 
+         (request.auth.token.email == "tayib4986@gmail.com" && request.auth.token.email_verified == true));
+    }
+    
+    function isManager() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'manager';
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return data.username is string && data.username.size() > 0 && data.username.size() < 100 &&
+             data.email is string && data.email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$") &&
+             data.status in ['active', 'suspended'] &&
+             data.examLimit is int && data.examLimit >= 0 &&
+             data.examsGenerated is int && data.examsGenerated >= 0 &&
+             (!('role' in data) || data.role in ['admin', 'manager']) &&
+             (!('whatsapp' in data) || data.whatsapp is string) &&
+             (!('createdBy' in data) || data.createdBy is string) &&
+             (!('userLimit' in data) || data.userLimit is int);
+    }
+
+    function isValidHistoricExam(data) {
+      return data.generatedAt is string &&
+             data.options is map &&
+             data.exam is list &&
+             data.userId is string && data.userId == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin() || (isManager() && resource.data.createdBy == request.auth.uid);
+      
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (
+        isOwner(userId) || isAdmin() || isManager()
+      );
+      
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (
+        isAdmin() || 
+        (isManager() && resource.data.createdBy == request.auth.uid) || 
+        (isOwner(userId) && request.resource.data.role == resource.data.role)
+      );
+      
+      allow delete: if isAdmin();
+    }
+    
+    match /history/{examId} {
+      allow read, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && isValidHistoricExam(request.resource.data);
+      allow update: if false; // History is immutable
+    }
+  }
+}
